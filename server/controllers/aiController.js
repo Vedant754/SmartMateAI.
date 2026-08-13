@@ -123,8 +123,6 @@ export const genImg = async (req, res) => {
         });
 
         const imageBuffer = response.data;
-        console.log("Image received, buffer size:", imageBuffer.length);
-
         // Upload to Cloudinary
         const cloudinaryResponse = await uploadImageToCloudinary(
             imageBuffer,
@@ -134,8 +132,6 @@ export const genImg = async (req, res) => {
 
         const imageUrl = cloudinaryResponse.secure_url;
         const publicId = cloudinaryResponse.public_id;
-
-        console.log("Image uploaded to Cloudinary:", imageUrl);
 
         // Store image URL in database
         await sql` INSERT INTO creations (user_id,prompt,content,type)
