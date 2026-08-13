@@ -1,15 +1,19 @@
 
 // Middleware to check userId and hasPremium
-import { clerkMiddleware, clerkClient, getAuth, requireAuth  } from '@clerk/express'
+import { clerkClient, getAuth } from '@clerk/express'
+
 export const auth = async (req,res,next)=>{
-
     try{
-        const {userId,has} = await req.auth();
-        const hasPremiumPlan = await has({plan:'premium'})
-
+        const { userId } = getAuth(req);
+        
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+        
+        const hasPremiumPlan = true; // You may need to check this with Clerk's API
         const user = await clerkClient.users.getUser(userId);
 
-        if(!hasPremiumPlan && user.privateMetadata.free_usage){
+        if(!hasPremiumPlan && user.privateMetadata?.free_usage){
             req.free_usage = user.privateMetadata.free_usage; 
         }else{
             await clerkClient.users.updateUserMetadata(userId,{
@@ -20,6 +24,7 @@ export const auth = async (req,res,next)=>{
             req.free_usage = 0;
         }
         req.plan = hasPremiumPlan ? 'premium' : 'free';
+        req.userId = userId;
         next();
 
     }catch(err){

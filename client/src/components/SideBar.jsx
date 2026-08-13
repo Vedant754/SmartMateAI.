@@ -42,11 +42,11 @@ const menuItems = [
     icon: LayoutDashboard,
     path: "/ai",
   },
-  {
-    title: "Community",
-    icon: Users,
-    path: "/ai/community",
-  },
+  // {
+  //   title: "Community",
+  //   icon: Users,
+  //   path: "/ai/community",
+  // },
   {
     title: "Blog Titles",
     icon: Hash,
@@ -57,21 +57,11 @@ const menuItems = [
     icon: Image,
     path: "/ai/generate-images",
   },
-  {
-    title: "Remove Background",
-    icon: Eraser,
-    path: "/ai/remove-background",
-  },
-  {
-    title: "Remove Object",
-    icon: Scissors,
-    path: "/ai/remove-object",
-  },
-  {
-    title: "Resume Review",
-    icon: FileText,
-    path: "/ai/review-resume",
-  },
+  // {
+  //   title: "Remove Background",
+  //   icon: Eraser,
+  //   path: "/ai/remove-background",
+  // },
   {
     title: "Write Article",
     icon: PenSquare,
@@ -79,7 +69,7 @@ const menuItems = [
   },
   {
     title: "Document Q&A",
-    icon: PenSquare,
+    icon: FileText,
     path: "/ai/doc-qna",
   },
 ];
