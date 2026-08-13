@@ -49,7 +49,7 @@ const Dashboard = () => {
         <div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
           <div>
             <p className="mb-2 text-sm font-medium text-blue-100">Your creative workspace</p>
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Good morning, {firstName} <span aria-hidden="true">&#10024;</span></h1>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Hello, {firstName} <span aria-hidden="true">&#10024;</span></h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-blue-100">Turn your next idea into something remarkable. Your AI toolkit is ready when you are.</p>
           </div>
           <button onClick={() => navigate("/ai/write-article")} className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-primary shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-50"><Plus size={17} /> Start creating</button>

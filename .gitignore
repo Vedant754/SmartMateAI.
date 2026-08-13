@@ -1,5 +1,6 @@
 # Dependencies
 /client/node_modules/
+/server/node_modules
 
 # Production builds
 /client/dist/
@@ -7,6 +8,7 @@
 
 # Environment files
 /client/.env
+/server/.env
 /client/.env.*
 !/client/.env.example
 

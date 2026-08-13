@@ -10,8 +10,17 @@ import RemoveObject from './pages/RemoveObject'
 import ReviewResume from './pages/ReviewResume'
 import WriteArticle from './pages/WriteArticle'
 import DocQnA from './pages/DocQnA'
+import { useAuth } from '@clerk/react'
+import { useEffect } from 'react'
 
 const App = () => {
+  const {getToken} = useAuth();
+  useEffect(()=>{
+    getToken().then((token)=>{
+      console.log(token);
+      
+    })
+  },[]) 
   return (
     <div>
       <Routes>
