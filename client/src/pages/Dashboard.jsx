@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { AiToolsData, dummyCreationData } from "../assets/assets";
-import { useUser } from "@clerk/react";
+import { useEffect, useState } from "react";
+import { AiToolsData } from "../assets/assets";
+import { useAuth, useUser } from "@clerk/react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowUpRight,
@@ -34,9 +34,36 @@ const statCards = [
 ];
 
 const Dashboard = () => {
-  const [creations] = useState(dummyCreationData);
+  const [creations, setCreations] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useUser();
+  const { getToken } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const token = await getToken();
+        const response = await fetch('http://localhost:3000/api/ai/history?limit=8', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setCreations(data.items || []);
+        }
+      } catch (error) {
+        console.error('Failed to load project history:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, [getToken]);
 
   const firstName = user?.firstName || user?.fullName?.split(" ")[0] || "Creator";
   const recentProjects = creations.slice(0, 4);
@@ -79,7 +106,7 @@ const Dashboard = () => {
 
       <section className="mt-6"><div className="mb-4 flex items-center justify-between"><div><h2 className="font-semibold text-slate-900">Quick actions</h2><p className="mt-1 text-sm text-slate-500">Jump back into your favorite tools</p></div><Users className="text-slate-300" size={22} /></div><div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">{AiToolsData.map(({ title, Icon, path, bg }) => <button key={title} onClick={() => navigate(path)} className="group flex min-h-28 flex-col items-start justify-between rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg"><span style={{ background: `linear-gradient(135deg, ${bg.from}, ${bg.to})` }} className="flex h-9 w-9 items-center justify-center rounded-lg text-white shadow-sm transition group-hover:scale-110"><Icon size={17} /></span><span className="text-xs font-semibold leading-4 text-slate-700">{title}</span></button>)}</div></section>
 
-      <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-5 sm:px-6"><div><h2 className="font-semibold text-slate-900">Recent projects</h2><p className="mt-1 text-sm text-slate-500">Pick up where you left off</p></div><button className="text-xs font-semibold text-primary transition hover:text-indigo-700">View all</button></div><div className="divide-y divide-slate-100">{recentProjects.map((project) => <div key={project.id} className="flex items-center gap-3 px-5 py-4 transition hover:bg-slate-50 sm:px-6"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-primary"><FileText size={18} /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-slate-800">{project.prompt.replace("Generate a blog title for the keyword ", "")}</p><p className="mt-1 text-xs capitalize text-slate-400">{project.type.replace("-", " ")} &middot; {new Date(project.created_at).toLocaleDateString()}</p></div><span className="hidden rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-600 sm:inline-flex">Completed</span><button className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label={`Open ${project.type}`}><ArrowUpRight size={17} /></button></div>)}</div></section>
+      <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-5 sm:px-6"><div><h2 className="font-semibold text-slate-900">Recent projects</h2><p className="mt-1 text-sm text-slate-500">Pick up where you left off</p></div><button className="text-xs font-semibold text-primary transition hover:text-indigo-700">View all</button></div><div className="divide-y divide-slate-100">{loading ? (<div className="px-5 py-6 text-sm text-slate-500 sm:px-6">Loading your recent projects…</div>) : recentProjects.length > 0 ? recentProjects.map((project) => <div key={project.id} className="flex items-center gap-3 px-5 py-4 transition hover:bg-slate-50 sm:px-6"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-primary"><FileText size={18} /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-slate-800">{project.prompt}</p><p className="mt-1 text-xs capitalize text-slate-400">{project.type.replace("-", " ")} &middot; {new Date(project.created_at).toLocaleDateString()}</p></div><span className="hidden rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-600 sm:inline-flex">Completed</span><button className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label={`Open ${project.type}`} onClick={() => navigate(project.type === 'blog' ? '/ai/block-titles' : project.type === 'article' ? '/ai/write-article' : '/ai')}><ArrowUpRight size={17} /></button></div>) : (<div className="px-5 py-6 text-sm text-slate-500 sm:px-6">No saved projects yet. Start creating your first one.</div>)}</div></section>
     </div>
   );
 };

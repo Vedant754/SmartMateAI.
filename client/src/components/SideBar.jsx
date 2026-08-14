@@ -57,11 +57,11 @@ const menuItems = [
     icon: Image,
     path: "/ai/generate-images",
   },
-  // {
-  //   title: "Remove Background",
-  //   icon: Eraser,
-  //   path: "/ai/remove-background",
-  // },
+  {
+    title: "Projects",
+    icon: Eraser,
+    path: "/ai/projects",
+  },
   {
     title: "Write Article",
     icon: PenSquare,

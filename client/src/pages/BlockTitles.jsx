@@ -2,6 +2,30 @@ import { useState } from 'react'
 import { ArrowRight, Check, FileText, Sparkles, AlertCircle, Loader } from 'lucide-react'
 import { useAuth } from '@clerk/react'
 
+const parseTitleList = (content) => {
+  if (!content || typeof content !== 'string') return []
+
+  const normalizedContent = content
+    .split('\n')
+    .filter((line) => !/^tone:\s*/i.test(line.trim()))
+    .join('\n')
+
+  return normalizedContent
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .filter((line) => /^\d+\./.test(line))
+    .map((line) => {
+      let title = line.replace(/^\d+\.\s*/, '').trim();
+      title = title.replace(/\*\*/g, '');
+      if (title.includes('*')) {
+        title = title.split('*')[0].trim();
+      }
+      return title;
+    })
+    .filter((title) => title.length > 0);
+}
+
 const BlockTitles = () => {
   const { getToken } = useAuth()
   const [topic, setTopic] = useState('')
@@ -48,34 +72,14 @@ const BlockTitles = () => {
       }
 
       if (data.success) {
-        // Parse the response to extract only titles
-        const lines = data.content.split('\n');
-        
-        // Filter and clean titles - remove numbering and extra info
-        const titles = lines
-          .filter(line => line.trim()) // Remove empty lines
-          .filter(line => /^\d+\./.test(line.trim())) // Keep only numbered lines
-          .map(line => {
-            // Remove number prefix (1., 2., etc.)
-            let title = line.replace(/^\d+\.\s*/, '').trim();
-            
-            // Remove markdown bold formatting (**text**)
-            title = title.replace(/\*\*/g, '');
-            
-            // Keep only the title part (before the * for explanation)
-            if (title.includes('*')) {
-              title = title.split('*')[0].trim();
-            }
-            
-            return title;
-          })
-          .filter(title => title.length > 0); // Remove empty titles
+        const titles = parseTitleList(data.content)
 
         setGeneratedTitles({
           topic: cleanTopic,
           tone,
-          titles: titles,
+          titles,
         })
+        setError(null)
       } else {
         setError(data.message || 'Failed to generate titles')
       }
@@ -211,16 +215,16 @@ const BlockTitles = () => {
               </p>
             </div>
 
-            <ol className='space-y-3'>
+            <div className='mb-4 space-y-3'>
               {generatedTitles.titles.map((title, index) => (
-                <li key={title} className='flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3'>
+                <div key={`${title}-${index}`} className='flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3'>
                   <span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-semibold text-primary'>
                     {index + 1}
                   </span>
                   <span className='pt-0.5 text-sm font-medium leading-6 text-slate-700'>{title}</span>
-                </li>
+                </div>
               ))}
-            </ol>
+            </div>
 
             <div className='mt-6 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700'>
               <Check size={17} aria-hidden='true' />

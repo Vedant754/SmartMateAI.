@@ -100,6 +100,77 @@ export const genBlog = async (req, res) => {
     }
 }
 
+export const getUserHistory = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { type, limit = 5 } = req.query;
+
+        let query = sql`SELECT * FROM creations WHERE user_id = ${userId}`;
+
+        if (type) {
+            query = sql`${query} AND type = ${type}`;
+        }
+
+        const results = await sql`${query} ORDER BY created_at DESC LIMIT ${Number(limit)}`;
+
+        res.json({ success: true, items: results });
+    } catch (err) {
+        console.log(err.message);
+        res.json({ success: false, message: err.message });
+    }
+};
+
+export const updateGeneration = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { id } = req.params;
+        const { prompt, content, type } = req.body;
+
+        const existing = await sql`SELECT * FROM creations WHERE id = ${id} AND user_id = ${userId}`;
+
+        if (!existing.length) {
+            return res.status(404).json({ success: false, message: 'Generation not found' });
+        }
+
+        const updated = await sql`
+            UPDATE creations
+            SET prompt = ${prompt ?? existing[0].prompt},
+                content = ${content ?? existing[0].content},
+                type = ${type ?? existing[0].type},
+                updated_at = NOW()
+            WHERE id = ${id} AND user_id = ${userId}
+            RETURNING *
+        `;
+
+        res.json({ success: true, item: updated[0] });
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+export const createGeneration = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { prompt, content, type = 'custom' } = req.body;
+
+        if (!prompt || !content) {
+            return res.status(400).json({ success: false, message: 'Prompt and content are required' });
+        }
+
+        const saved = await sql`
+            INSERT INTO creations (user_id, prompt, content, type)
+            VALUES (${userId}, ${prompt}, ${content}, ${type})
+            RETURNING *
+        `;
+
+        res.status(201).json({ success: true, item: saved[0] });
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
 export const genImg = async (req, res) => {
     try {
         const userId = req.userId;
