@@ -1,36 +1,90 @@
 import { useState } from 'react'
-import { ArrowRight, Check, FileText, Sparkles } from 'lucide-react'
+import { ArrowRight, Check, FileText, Sparkles, AlertCircle, Loader } from 'lucide-react'
+import { useAuth } from '@clerk/react'
 
 const BlockTitles = () => {
+  const { getToken } = useAuth()
   const [topic, setTopic] = useState('')
   const [titleCount, setTitleCount] = useState('5')
   const [tone, setTone] = useState('Professional')
   const [generatedTitles, setGeneratedTitles] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-  const titleIdeas = [
-    'The Complete Guide to {topic}',
-    'What the Future of {topic} Looks Like',
-    'How {topic} Is Changing the Way We Work',
-    'The Essential Ideas Everyone Should Know About {topic}',
-    'A Practical Approach to Understanding {topic}',
-    'Why {topic} Matters More Than Ever',
-    'The Smart Beginner\'s Guide to {topic}',
-    '7 Important Lessons {topic} Can Teach Us',
-    'From Challenge to Opportunity: Rethinking {topic}',
-    'The Next Chapter of {topic}',
-  ]
-
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     const cleanTopic = topic.trim()
 
-    setGeneratedTitles({
-      topic: cleanTopic,
-      tone,
-      titles: titleIdeas
-        .slice(0, Number(titleCount))
-        .map((title) => title.replace('{topic}', cleanTopic)),
-    })
+    if (!cleanTopic) {
+      setError('Please enter a topic')
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Get Clerk auth token
+      const token = await getToken()
+
+      // Call backend API
+      const response = await fetch('http://localhost:3000/api/ai/generate-blog', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          prompt: cleanTopic,
+          total: Number(titleCount),
+          tone: tone,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to generate titles')
+      }
+
+      if (data.success) {
+        // Parse the response to extract only titles
+        const lines = data.content.split('\n');
+        
+        // Filter and clean titles - remove numbering and extra info
+        const titles = lines
+          .filter(line => line.trim()) // Remove empty lines
+          .filter(line => /^\d+\./.test(line.trim())) // Keep only numbered lines
+          .map(line => {
+            // Remove number prefix (1., 2., etc.)
+            let title = line.replace(/^\d+\.\s*/, '').trim();
+            
+            // Remove markdown bold formatting (**text**)
+            title = title.replace(/\*\*/g, '');
+            
+            // Keep only the title part (before the * for explanation)
+            if (title.includes('*')) {
+              title = title.split('*')[0].trim();
+            }
+            
+            return title;
+          })
+          .filter(title => title.length > 0); // Remove empty titles
+
+        setGeneratedTitles({
+          topic: cleanTopic,
+          tone,
+          titles: titles,
+        })
+      } else {
+        setError(data.message || 'Failed to generate titles')
+      }
+    } catch (err) {
+      setError(err.message || 'An error occurred while generating titles')
+      console.error('Error:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -72,12 +126,31 @@ const BlockTitles = () => {
             </div>
             <button
               type='submit'
-              className='flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200 active:scale-[0.99]'
+              disabled={loading}
+              className='flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200 active:scale-[0.99]'
             >
-              Generate titles
-              <ArrowRight size={17} aria-hidden='true' />
+              {loading ? (
+                <>
+                  <Loader size={17} className='animate-spin' aria-hidden='true' />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  Generate titles
+                  <ArrowRight size={17} aria-hidden='true' />
+                </>
+              )}
             </button>
           </div>
+
+          {error && (
+            <div className='flex items-start gap-3 rounded-lg bg-red-50 px-4 py-3 border border-red-200'>
+              <AlertCircle size={18} className='text-red-600 mt-0.5 shrink-0' aria-hidden='true' />
+              <div>
+                <p className='text-sm font-medium text-red-800'>{error}</p>
+              </div>
+            </div>
+          )}
 
           <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
             <div>
@@ -118,7 +191,12 @@ const BlockTitles = () => {
       </form>
 
       <div className='w-full max-h-[32rem] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8'>
-        {generatedTitles ? (
+        {loading ? (
+          <div className='flex flex-col items-center justify-center py-12'>
+            <Loader size={40} className='animate-spin text-primary mb-4' aria-hidden='true' />
+            <p className='text-slate-600 font-medium'>Generating your titles...</p>
+          </div>
+        ) : generatedTitles ? (
           <section aria-labelledby='generated-titles-heading'>
             <div className='mb-6 border-b border-slate-100 pb-5'>
               <div className='mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary'>

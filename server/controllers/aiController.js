@@ -58,7 +58,7 @@ export const genArticle = async (req, res) => {
 export const genBlog = async (req, res) => {
     try {
         const userId = req.userId;
-        const { prompt, total = 5 } = req.body;
+        const { prompt, total = 5,tone = 'Professional'} = req.body;
 
         const plan = req.plan;
         const free_usage = req.free_usage;
@@ -66,8 +66,8 @@ export const genBlog = async (req, res) => {
         if (plan !== 'premium' && free_usage >= 10) {
             res.json({ success: false, message: "Limit Reached" })
         }
-        console.log(`${prompt}.For this idea generate SEO optimized a total of ${total} titles`);
-        const sentence = `${prompt}.For this idea generate SEO optimized a total of ${total} titles`
+        console.log(`${prompt}.For this idea generate a total of ${total} titles and keep the tone of the language as ${tone}`);
+        const sentence = `${prompt}.For this idea generate SEO optimized a total of ${total} titles and keep the tone of the language as ${tone}`
 
         const response = await openai.chat.completions.create({
             model: "gemini-3.6-flash",
@@ -78,7 +78,7 @@ export const genBlog = async (req, res) => {
                 },
             ],
             temperature: 0.7,
-            max_tokens: 300
+            // max_tokens: 300
         });
         const content = response.choices[0].message.content;
 
